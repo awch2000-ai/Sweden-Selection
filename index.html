@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>瑞典冬季旅遊偏好二選一 | Sweden Winter Travel Matcher</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nordic: {
+              dark: '#0F172A',
+              navy: '#1A2B4C',
+              card: '#1E293B',
+              ice: '#E0F2FE',
+              sky: '#38BDF8',
+              gold: '#FDE047',
+              accent: '#F59E0B'
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #0F172A 0%, #1A2B4C 50%, #0B132B 100%);
+      min-height: 100vh;
+      color: #E0F2FE;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-6px) scale(1.01);
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.5), 0 0 20px 2px rgba(56, 189, 248, 0.2);
+    }
+    .active-press:active {
+      transform: scale(0.97);
+    }
+    .progress-glow {
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    }
+    /* Toast Animation */
+    #toast {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased flex flex-col justify-between min-h-screen">
+
+  <!-- Header Section -->
+  <header class="w-full py-4 px-6 glass-panel sticky top-0 z-40 shadow-lg">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🇸🇪</span>
+        <h1 class="font-bold text-lg md:text-xl text-white tracking-wide">瑞典冬季旅遊偏好二選一</h1>
+      </div>
+      <button id="undo-btn" onclick="undoLastChoice()" class="hidden text-xs md:text-sm bg-slate-800/80 hover:bg-slate-700 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-full transition flex items-center gap-1">
+        <span>↩️</span> 復原上一步
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Game Container -->
+  <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-grow flex flex-col justify-center">
+
+    <!-- 1. Welcome Screen -->
+    <div id="welcome-screen" class="glass-panel rounded-3xl p-8 md:p-12 text-center max-w-2xl mx-auto my-auto shadow-2xl">
+      <div class="text-5xl mb-4">❄️✨</div>
+      <h2 class="text-2xl md:text-3xl font-bold mb-4 text-white">探索你的專屬瑞典冬日之旅</h2>
+      <p class="text-sky-200/80 mb-6 text-sm md:text-base leading-relaxed">
+        這裡包含 50 個瑞典獨特的冬季極光、冰雪冒險與北歐文化體驗。<br>
+        只需進行約 <span class="text-nordic-gold font-bold">85 次</span> 直覺的二選一抉擇，即可精準為你演算出個人化 1 至 50 名的景點偏好排行榜與預估預算！
+      </p>
+      <button onclick="startGame()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold py-3.5 px-8 rounded-full text-lg shadow-lg hover:shadow-sky-500/25 transition transform hover:-translate-y-0.5 active:translate-y-0">
+        開始二選一體驗 🚀
+      </button>
+    </div>
+
+    <!-- 2. Game Comparison Screen -->
+    <div id="game-screen" class="hidden flex-col gap-6">
+      
+      <!-- Progress Bar Container -->
+      <div class="glass-panel rounded-2xl p-4 shadow-md">
+        <div class="flex justify-between items-center mb-2 text-xs md:text-sm font-medium">
+          <span class="text-sky-300" id="progress-text">進度：第 1 / 約 85 次</span>
+          <span class="text-nordic-gold font-bold" id="progress-percent">0%</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-white/10">
+          <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-nordic-gold h-full rounded-full transition-all duration-300 progress-glow" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Choices Grid (Card A vs Card B) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative items-stretch">
+        
+        <!-- VS Badge Center -->
+        <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-nordic-dark border-2 border-nordic-gold text-nordic-gold font-bold rounded-full w-12 h-12 items-center justify-center shadow-xl text-sm tracking-wider">
+          VS
+        </div>
+
+        <!-- Option Card A -->
+        <div id="card-a" onclick="makeChoice(0)" class="glass-card rounded-2xl overflow-hidden cursor-pointer flex flex-col justify-between group active-press">
+          <div>
+            <div class="relative h-56 md:h-64 overflow-hidden bg-slate-800">
+              <img id="img-a" src="" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="handleImgError(this, 0)">
+              <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-sky-300 border border-sky-500/30 text-xs px-2.5 py-1 rounded-full font-medium" id="loc-a">📍 Location</div>
+              <div class="absolute top-3 right-3 bg-amber-500/20 backdrop-blur-md text-nordic-gold border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-bold" id="budget-a">💰 HK$ 0</div>
+            </div>
+            <div class="p-5">
+              <h3 class="text-xl font-bold text-white group-hover:text-sky-300 transition" id="title-zh-a">景點 A 中文名稱</h3>
+              <p class="text-xs text-sky-200/60 font-mono mb-3" id="title-en-a">Spot A English Title</p>
+              <p class="text-sm text-slate-300 leading-relaxed" id="desc-a">景點簡介內容將呈現於此處...</p>
+            </div>
+          </div>
+          <div class="px-5 pb-5 pt-2">
+            <button class="w-full py-2.5 bg-sky-500/20 group-hover:bg-sky-500/40 text-sky-200 group-hover:text-white rounded-xl border border-sky-500/30 text-sm font-semibold transition text-center">
+              我更想體驗這個 👈
+            </button>
+          </div>
+        </div>
+
+        <!-- Option Card B -->
+        <div id="card-b" onclick="makeChoice(1)" class="glass-card rounded-2xl overflow-hidden cursor-pointer flex flex-col justify-between group active-press">
+          <div>
+            <div class="relative h-56 md:h-64 overflow-hidden bg-slate-800">
+              <img id="img-b" src="" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="handleImgError(this, 1)">
+              <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-sky-300 border border-sky-500/30 text-xs px-2.5 py-1 rounded-full font-medium" id="loc-b">📍 Location</div>
+              <div class="absolute top-3 right-3 bg-amber-500/20 backdrop-blur-md text-nordic-gold border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-bold" id="budget-b">💰 HK$ 0</div>
+            </div>
+            <div class="p-5">
+              <h3 class="text-xl font-bold text-white group-hover:text-sky-300 transition" id="title-zh-b">景點 B 中文名稱</h3>
+              <p class="text-xs text-sky-200/60 font-mono mb-3" id="title-en-b">Spot B English Title</p>
+              <p class="text-sm text-slate-300 leading-relaxed" id="desc-b">景點簡介內容將呈現於此處...</p>
+            </div>
+          </div>
+          <div class="px-5 pb-5 pt-2">
+            <button class="w-full py-2.5 bg-sky-500/20 group-hover:bg-sky-500/40 text-sky-200 group-hover:text-white rounded-xl border border-sky-500/30 text-sm font-semibold transition text-center">
+              我更想體驗這個 👉
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 3. Results Screen -->
+    <div id="result-screen" class="hidden flex-col gap-8 my-auto py-4">
+      
+      <!-- Top Summary Card -->
+      <div class="glass-panel rounded-3xl p-6 md:p-8 text-center relative overflow-hidden shadow-2xl">
+        <div class="absolute -right-10 -bottom-10 text-9xl opacity-10 select-none">🇸🇪</div>
+        <span class="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Personalized Itinerary</span>
+        <h2 class="text-2xl md:text-4xl font-bold text-white mb-3">你的瑞典冬季旅遊偏好排行榜</h2>
+        <p class="text-slate-300 text-sm md:text-base max-w-xl mx-auto mb-6">根據你的 85 次比對決策，我們演算法為你計算出最契合你靈魂的瑞典冬日體驗！</p>
+        
+        <!-- Budget Estimation Box -->
+        <div class="bg-slate-900/70 border border-amber-500/30 rounded-2xl p-4 md:p-6 max-w-xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="text-left">
+            <p class="text-xs text-amber-300/80 font-medium">體驗你最感興趣的【Top 5 景點】估算總預算</p>
+            <p class="text-2xl md:text-3xl font-extrabold text-nordic-gold mt-0.5" id="top5-budget">HK$ 0</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">*含 Stockholm 出發來回交通、特色住宿與活動門票估計</p>
+          </div>
+          <div class="flex gap-2 w-full md:w-auto">
+            <button onclick="shareResults()" class="flex-1 md:flex-none bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm transition shadow-md flex items-center justify-center gap-1.5">
+              <span>📋</span> 分享/複製結果
+            </button>
+            <button onclick="restartGame()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs md:text-sm border border-white/10 transition flex items-center justify-center gap-1.5">
+              <span>🔄</span> 重新測試
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top 10 Spotlight -->
+      <div>
+        <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span>🏆</span> 專屬偏好 Top 10 名單
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="top10-container">
+          <!-- Dynamically Generated Top 10 Cards -->
+        </div>
+      </div>
+
+      <!-- Full 1-50 Rankings Table -->
+      <div class="glass-panel rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>📊</span> 完整 1-50 名偏好順序
+          </h3>
+          <span class="text-xs text-slate-400">點擊列表可再檢視詳情</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs md:text-sm">
+            <thead>
+              <tr class="border-b border-slate-700/60 text-sky-300 font-semibold">
+                <th class="py-3 px-3 w-16">名次</th>
+                <th class="py-3 px-3">景點體驗名稱</th>
+                <th class="py-3 px-3">地點</th>
+                <th class="py-3 px-3 text-right">預估預算 (HKD)</th>
+              </tr>
+            </thead>
+            <tbody id="full-rank-tbody" class="divide-y divide-slate-800/60">
+              <!-- Dynamically Generated 1-50 rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full py-4 text-center text-xs text-slate-500 border-t border-slate-800/80">
+    🇸🇪 Sweden Winter Travel Preference Game &copy; 2026 | Built for Winter Adventurers
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-sky-500 text-slate-950 px-5 py-2.5 rounded-full font-bold shadow-2xl opacity-0 pointer-events-none z-50 text-xs md:text-sm flex items-center gap-2">
+    <span>✅</span> <span id="toast-msg">已成功複製結果至剪貼簿！</span>
+  </div>
+
+  <!-- JavaScript Code -->
+  <script>
+    // ==========================================
+    // 1. 50 個瑞典冬季景點/體驗完整資料庫 (50 Items)
+    // ==========================================
+    const swedenSpots = [
+      {
+        id: 1,
+        title_zh: "阿比斯庫極光追尋",
+        title_en: "Abisko Northern Lights Hunting",
+        location: "Lapland, Abisko",
+        description: "前往全球最佳極光觀賞地之一的阿比斯庫，在無光害的雪原中仰望夜空，捕捉璀璨歐羅拉。",
+        budget_hkd: 4200,
+        unsplash_query: "Abisko northern lights snow aurora",
+        image_url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 2,
+        title_zh: "基律納冰飯店夢幻住宿",
+        title_en: "Icehotel Jukkasjärvi Stay",
+        location: "Lapland, Kiruna",
+        description: "入住完全由托爾訥河冰雪打造的雕刻藝術客房，體驗一生必試一次的零下極致冰雪夜宿。",
+        budget_hkd: 4800,
+        unsplash_query: "Icehotel Jukkasjarvi room ice sculpture",
+        image_url: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 3,
+        title_zh: "薩米文化與馴鹿雪橇",
+        title_en: "Sámi Culture & Reindeer Sledding",
+        location: "Lapland, Kiruna",
+        description: "深入北歐原住民薩米人的帳篷，聆聽古老傳說，餵食馴鹿並乘坐傳統馴鹿雪橇穿梭雪林。",
+        budget_hkd: 2600,
+        unsplash_query: "Sami culture reindeer sledding snow lapland",
+        image_url: "https://images.unsplash.com/photo-1543637939-75849673ceab?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 4,
+        title_zh: "阿比斯庫國家公園雪鞋徒步",
+        title_en: "Abisko National Park Snowshoeing",
+        location: "Lapland, Abisko",
+        description: "穿上特製雪鞋踩在厚重積雪上，穿梭於寂靜的北極峽谷與冰封湖泊，探索極地大自然。",
+        budget_hkd: 1800,
+        unsplash_query: "Abisko national park snowshoeing winter hike",
+        image_url: "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 5,
+        title_zh: "哈士奇狗拉雪橇極地疾馳",
+        title_en: "Husky Dog Sledding Safari",
+        location: "Lapland, Kiruna",
+        description: "駕駛充滿活力的阿拉斯加哈士奇犬隊，在銀白雪原與松樹林間高速穿梭，感受熱血冰雪之旅。",
+        budget_hkd: 2200,
+        unsplash_query: "Husky dog sledding arctic snow",
+        image_url: "https://images.unsplash.com/photo-1517825738774-7de9363ef735?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 6,
+        title_zh: "斯德哥爾摩老城聖誕市集",
+        title_en: "Gamla Stan Christmas Market",
+        location: "Stockholm",
+        description: "漫步於古色古香的老城廣場，品嚐熱熱的 Glögg 熱紅酒與薑餅，感受濃郁北歐聖誕溫馨氛圍。",
+        budget_hkd: 450,
+        unsplash_query: "Gamla Stan Stockholm Christmas market winter",
+        image_url: "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 7,
+        title_zh: "瓦薩沉船博物館探秘",
+        title_en: "Vasa Museum Tour",
+        location: "Stockholm",
+        description: "近距離觀賞 17 世紀沉沒後完好保存的皇家戰艦瓦薩號，感受極具震撼力的海事歷史藝術。",
+        budget_hkd: 350,
+        unsplash_query: "Vasa museum Stockholm ship",
+        image_url: "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 8,
+        title_zh: "北極圈夜間狗拉雪橇追極光",
+        title_en: "Night Husky Aurora Safari",
+        location: "Lapland, Abisko",
+        description: "在漆黑的極夜中由哈士奇隊帶領，飛馳於星空與綠色極光幕簾之下，享受無與倫比的浪漫奇幻。",
+        budget_hkd: 2800,
+        unsplash_query: "Night husky dog sledding aurora lights",
+        image_url: "https://images.unsplash.com/photo-1579033461380-adb47c3eb938?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 9,
+        title_zh: "斯德哥爾摩群島冬日冰上船遊",
+        title_en: "Stockholm Archipelago Ice Cruise",
+        location: "Stockholm",
+        description: "搭乘經典觀光船駛過結冰的斯德哥爾摩海灣，沿途欣賞覆雪的小島群與海天一色的極簡冬景。",
+        budget_hkd: 850,
+        unsplash_query: "Stockholm archipelago winter boat ice",
+        image_url: "https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 10,
+        title_zh: "極地破冰船體驗與冰海漂浮",
+        title_en: "Arctic Icebreaker Cruise & Floating",
+        location: "Lapland, Kalix",
+        description: "搭乘大型破冰船巨輪碾碎冰層，穿上特製防寒救生衣跳入北冰洋冰水，享受神奇的漂浮感受。",
+        budget_hkd: 3900,
+        unsplash_query: "Icebreaker cruise arctic ocean ice floating",
+        image_url: "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 11,
+        title_zh: "瑞典傳統 Fika 咖啡下午茶",
+        title_en: "Swedish Traditional Fika Experience",
+        location: "Stockholm",
+        description: "融入瑞典人的生活哲學，在精緻咖啡館享用現磨咖啡搭配新鮮剛出爐的肉桂捲與卡達檬麵包。",
+        budget_hkd: 150,
+        unsplash_query: "Swedish fika coffee cinnamon bun pastry",
+        image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 12,
+        title_zh: "哥德堡里瑟本冬日主題樂園",
+        title_en: "Liseberg Winter Village",
+        location: "Gothenburg",
+        description: "進入數百萬盞綵燈點亮的花園樂園，品嚐冬季美食、體驗溜冰場與溫馨的童話聖誕村。",
+        budget_hkd: 650,
+        unsplash_query: "Liseberg winter christmas lights amusement park",
+        image_url: "https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 13,
+        title_zh: "約克莫克薩米冬日百年集市",
+        title_en: "Jokkmokk Winter Market",
+        location: "Lapland, Jokkmokk",
+        description: "參與擁有超過 400 年歷史的北極百年集市，選購薩米手工藝品、手工鹿皮靴與品嚐野味美食。",
+        budget_hkd: 3200,
+        unsplash_query: "Jokkmokk winter market sami culture",
+        image_url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 14,
+        title_zh: "阿比斯庫光之車站天空纜車",
+        title_en: "Aurora Sky Station Cable Car",
+        location: "Lapland, Abisko",
+        description: "搭乘高空纜車登上努奧亞山頂，在露天觀景台享用晚宴，以絕佳視野俯瞰山谷間絢麗的極光。",
+        budget_hkd: 1900,
+        unsplash_query: "Aurora sky station cable car abisko",
+        image_url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 15,
+        title_zh: "雪地摩托車極地荒野探險",
+        title_en: "Snowmobile Wilderness Safari",
+        location: "Lapland, Kiruna",
+        description: "親自駕駛強勁的雪地摩托車，穿越凍原、冰湖與密林，感受極致衝刺的快感與曠野美景。",
+        budget_hkd: 2400,
+        unsplash_query: "Snowmobile safari arctic snow adventure",
+        image_url: "https://images.unsplash.com/photo-1548783303-34e85743b123?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 16,
+        title_zh: "瑞典皇家歌劇院冬季芭蕾盛宴",
+        title_en: "Royal Swedish Opera Ballet",
+        location: "Stockholm",
+        description: "在富麗堂皇的皇家歌劇院內欣賞高水準的古典芭蕾或交響樂演出，體驗奢華的北歐文化夜晚。",
+        budget_hkd: 800,
+        unsplash_query: "Royal Swedish Opera hall ballet stockholm",
+        image_url: "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 17,
+        title_zh: "斯德哥爾摩市政廳與諾貝爾晚宴廳",
+        title_en: "Stockholm City Hall & Nobel Hall",
+        location: "Stockholm",
+        description: "走進著名的藍廳與金廳，親臨每年舉辦諾貝爾獎晚宴的場所，欣賞過百萬塊黃金馬賽克壁畫。",
+        budget_hkd: 300,
+        unsplash_query: "Stockholm city hall blue hall gold hall",
+        image_url: "https://images.unsplash.com/photo-1513581166391-887a96ddeafd?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 18,
+        title_zh: "馬爾默旋轉大樓與冬日海岸漫步",
+        title_en: "Turning Torso & Winter Coast",
+        location: "Malmö",
+        description: "打卡北歐最高摩天大樓 Turning Torso，在雪中的厄勒海峽海濱走廊散步，眺望對岸的丹麥。",
+        budget_hkd: 750,
+        unsplash_query: "Turning Torso Malmo Sweden architecture",
+        image_url: "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 19,
+        title_zh: "極光攝影大師工作坊",
+        title_en: "Aurora Photography Masterclass",
+        location: "Lapland, Abisko",
+        description: "在專業攝影師導師指導下，學習設定相機參數與構圖，精準捕捉極光律動與夜空美景。",
+        budget_hkd: 2100,
+        unsplash_query: "Aurora photography camera night sky snow",
+        image_url: "https://images.unsplash.com/photo-1529963183134-61a90db47eaf?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 20,
+        title_zh: "北極圈冰釣體驗",
+        title_en: "Arctic Ice Fishing Experience",
+        location: "Lapland, Kiruna",
+        description: "在厚實的冰面上鑽出冰洞，坐在溫暖的鹿皮座椅上等待北極紅點鮭上鉤，隨後享用現烤鮮魚。",
+        budget_hkd: 1500,
+        unsplash_query: "Ice fishing arctic lake snow",
+        image_url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 21,
+        title_zh: "烏普薩拉百年大教堂與雪景",
+        title_en: "Uppsala Cathedral Winter Walk",
+        location: "Uppsala",
+        description: "造訪斯堪地那維亞最大的哥德式大教堂，漫步於滿布厚雪的大學城老街與城堡河畔。",
+        budget_hkd: 400,
+        unsplash_query: "Uppsala Cathedral winter sweden snow",
+        image_url: "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 22,
+        title_zh: "瑞典露天桑拿與冰湖勇士勇闖",
+        title_en: "Swedish Sauna & Ice Plunge",
+        location: "Stockholm / Lapland",
+        description: "體驗純正瑞典桑拿蒸氣浴後，直接跳入切開的冰湖冷水中，享受極致的新陳代謝與無比爽快感。",
+        budget_hkd: 600,
+        unsplash_query: "Swedish sauna ice plunge winter lake",
+        image_url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 23,
+        title_zh: "戴爾斯蘭水渠冰雪荒野划艇",
+        title_en: "Dalsland Winter Kayaking",
+        location: "Dalsland",
+        description: "穿上乾式防寒衣，在結冰湖泊與寧靜水道中穿梭劃艇，獨享宛如仙境的冬季自然風光。",
+        budget_hkd: 1600,
+        unsplash_query: "Winter kayaking ice lake nature",
+        image_url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 24,
+        title_zh: "斯德哥爾摩地鐵藝術畫廊巡禮",
+        title_en: "Stockholm Metro Art Tour",
+        location: "Stockholm",
+        description: "搭乘地鐵穿梭於世界上最長的藝術畫廊，打卡地底岩洞中色彩繽紛、風格獨特的地鐵站壁畫。",
+        budget_hkd: 80,
+        unsplash_query: "Stockholm metro station art subway",
+        image_url: "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 25,
+        title_zh: "哥德堡 Haga 老城巨型肉桂捲",
+        title_en: "Haga Giant Cinnamon Bun",
+        location: "Gothenburg",
+        description: "漫步哥德堡最古老的 Haga 鵝卵石街區，享用比臉還大的傳統巨型肉桂捲 (Kanelbulle)。",
+        budget_hkd: 180,
+        unsplash_query: "Gothenburg Haga cinnamon bun fika",
+        image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 26,
+        title_zh: "奧雷世界級滑雪場滑雪體驗",
+        title_en: "Åre Alpine Ski Resort",
+        location: "Jämtland, Åre",
+        description: "北歐最大的滑雪勝地，擁有世界級優質粉雪與多元雪道，盡情享受高山滑雪與 Après-ski 歡樂酒吧。",
+        budget_hkd: 3800,
+        unsplash_query: "Are ski resort sweden mountains snow",
+        image_url: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 27,
+        title_zh: "瑞典極地野生動物園觀熊與狼",
+        title_en: "Wild Arctic Fauna Zoo Park",
+        location: "Lapland, Järvsö",
+        description: "在自然保護園區中觀察適應嚴寒的北歐特有野生動物，包括狼群、棕熊、猞猁與駝鹿。",
+        budget_hkd: 1200,
+        unsplash_query: "Arctic wolf snow sweden wildlife",
+        image_url: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 28,
+        title_zh: "冰川瀑布攀冰極限體驗",
+        title_en: "Ice Climbing Adventure",
+        location: "Lapland, Abisko",
+        description: "在專業教練帶領下，戴上冰爪與冰斧攀登結冰的高聳瀑布，解鎖極具挑戰性的冰雪極限運動。",
+        budget_hkd: 2500,
+        unsplash_query: "Ice climbing waterfall arctic snow",
+        image_url: "https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 29,
+        title_zh: "哥德堡海鮮教堂與北歐生蠔饗宴",
+        title_en: "Feskekörka Seafood Market",
+        location: "Gothenburg",
+        description: "造訪外觀如教堂的著名魚市場，品嚐剛捕撈上岸的冷水海域鮮甜生蠔、帝王蟹與煙燻鮭魚。",
+        budget_hkd: 900,
+        unsplash_query: "Seafood oysters dining Gothenburg sweden",
+        image_url: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 30,
+        title_zh: "極地露天溫泉與極光 SPA",
+        title_en: "Arctic Aurora Bath & Spa",
+        location: "Lapland, Harads",
+        description: "泡在漂浮於河面上的特製露天熱湯池中，四周被冰雪包圍，邊泡湯邊等待頭頂閃耀的極光。",
+        budget_hkd: 3100,
+        unsplash_query: "Arctic spa outdoor hot tub snow aurora",
+        image_url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 31,
+        title_zh: "樹屋飯店 Treehotel 奇幻夜宿",
+        title_en: "Treehotel Forest Lodge",
+        location: "Lapland, Harads",
+        description: "入住隱身於哈拉茲松樹林高處的現代設計樹屋（如鳥巢、鏡魔方），感受與自然完全融為一體的科幻感。",
+        budget_hkd: 5200,
+        unsplash_query: "Treehotel Harads sweden architecture forest",
+        image_url: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 32,
+        title_zh: "斯德哥爾摩國王花園露天滑冰",
+        title_en: "Kungsträdgården Ice Skating",
+        location: "Stockholm",
+        description: "在斯德哥爾摩市中心國王花園冰場跟隨音樂優雅滑冰，周圍點綴著燦爛燈飾與熱飲小攤。",
+        budget_hkd: 200,
+        unsplash_query: "Kungstradgarden ice skating stockholm winter",
+        image_url: "https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 33,
+        title_zh: "瑞典傳統聖誕大餐 Julbord 饗宴",
+        title_en: "Traditional Swedish Julbord Feast",
+        location: "Stockholm",
+        description: "品嚐豐富多樣的瑞典冬季盛宴，包含經典鯡魚、瑞典肉丸、醃鮭魚、聖誕火腿與特別款黑啤酒。",
+        budget_hkd: 880,
+        unsplash_query: "Julbord sweden christmas feast food",
+        image_url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 34,
+        title_zh: "卡爾斯塔德維納恩湖天然冰滑冰",
+        title_en: "Lake Vänern Natural Ice Skating",
+        location: "Karlstad",
+        description: "穿上長刃滑冰鞋，在北歐最大湖泊結冰廣闊無垠的天然冰面上長途滑行，體會暢快淋漓。",
+        budget_hkd: 1100,
+        unsplash_query: "Natural ice skating lake sweden",
+        image_url: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 35,
+        title_zh: "斯德哥爾摩 ICEBAR 冰酒吧微醺",
+        title_en: "Icebar Stockholm by ICEHOTEL",
+        location: "Stockholm",
+        description: "進入全年保持零下5度的冰酒吧，用純淨托爾訥河冰塊製成的酒杯，品嚐特製北歐雞尾酒。",
+        budget_hkd: 380,
+        unsplash_query: "Icebar Stockholm cocktail glass ice",
+        image_url: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 36,
+        title_zh: "隆德大學城歷史古蹟冬日散步",
+        title_en: "Lund Historic University Winter Walk",
+        location: "Lund",
+        description: "探訪瑞典最古老的大學城之一，走在鋪滿薄雪的長春藤古老建築與千年中世紀大教堂之間。",
+        budget_hkd: 500,
+        unsplash_query: "Lund sweden university winter street",
+        image_url: "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 37,
+        title_zh: "北極圈玻璃穹頂帳篷奢華營地",
+        title_en: "Aurora Glass Igloo Glamping",
+        location: "Lapland, Kiruna",
+        description: "躺在溫暖的玻璃穹頂帳篷床鋪上，不需忍受寒風，睜開眼就能看見滿天繁星與璀璨極光。",
+        budget_hkd: 4500,
+        unsplash_query: "Glass igloo aurora dome winter lapland",
+        image_url: "https://images.unsplash.com/photo-1517825738774-7de9363ef735?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 38,
+        title_zh: "斯摩蘭玻璃王國手工水晶巡禮",
+        title_en: "Kingdom of Crystal Glassworks",
+        location: "Småland",
+        description: "走訪世紀玻璃工坊，觀賞技藝精湛的玻璃大師現場吹製精美水晶，並親手體驗吹玻璃樂趣。",
+        budget_hkd: 950,
+        unsplash_query: "Glassblowing crystal glass sweden",
+        image_url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 39,
+        title_zh: "斯德哥爾摩冬日復古蒸氣船夜遊",
+        title_en: "Stockholm Winter Dinner Cruise",
+        location: "Stockholm",
+        description: "登上百年歷史的復古蒸氣船，一邊享用三道式精緻北歐美饌，一邊欣賞水上璀璨夜景。",
+        budget_hkd: 1100,
+        unsplash_query: "Stockholm boat night dinner cruise",
+        image_url: "https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 40,
+        title_zh: "北極圈越野滑雪荒野穿越",
+        title_en: "Cross-Country Skiing in Arctic",
+        location: "Lapland, Gällivare",
+        description: "踩著越野滑雪板穿越被靜謐積雪覆蓋的松林與山丘，感受瑞典人最愛的國民冬日運動。",
+        budget_hkd: 1300,
+        unsplash_query: "Cross country skiing winter forest",
+        image_url: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 41,
+        title_zh: "阿比斯庫冰瀑布徒步探險",
+        title_en: "Frozen Waterfall Trek",
+        location: "Lapland, Abisko",
+        description: "徒步探索冰封的藍色瀑布奇景，在巨大的冰柱景觀前享用熱飲料，感受大自然的鬼斧神工。",
+        budget_hkd: 1650,
+        unsplash_query: "Frozen waterfall winter arctic snow",
+        image_url: "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 42,
+        title_zh: "哥德堡冬日海濱植物園漫步",
+        title_en: "Gothenburg Botanical Garden Walk",
+        location: "Gothenburg",
+        description: "在歐洲頂尖的植物園內漫步，參觀熱帶溫室展館，與露天園區內的雪白樹木與冬日花卉接軌。",
+        budget_hkd: 250,
+        unsplash_query: "Botanical garden winter snow greenhouse",
+        image_url: "https://images.unsplash.com/photo-1513581166391-887a96ddeafd?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 43,
+        title_zh: "瑞典經典肉丸名店美食巡禮",
+        title_en: "Classic Swedish Meatballs Dining",
+        location: "Stockholm",
+        description: "造訪名店 Meatballs for the People，品嚐由多種特製肉品搭配越橘醬與奶油薯泥的美食。",
+        budget_hkd: 320,
+        unsplash_query: "Swedish meatballs gravy mashed potatoes food",
+        image_url: "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 44,
+        title_zh: "德羅特寧霍姆宮冬日皇家花園",
+        title_en: "Drottningholm Palace Winter Garden",
+        location: "Stockholm",
+        description: "參觀世界文化遺產「瑞典凡爾賽宮」，在白雪皚皚的法式皇家花園與中國宮之間悠閒漫步。",
+        budget_hkd: 350,
+        unsplash_query: "Drottningholm Palace Stockholm winter",
+        image_url: "https://images.unsplash.com/photo-1513581166391-887a96ddeafd?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 45,
+        title_zh: "北極圈篝火晚會與薩米故事夜",
+        title_en: "Arctic Campfire & Sámi Storytelling",
+        location: "Lapland, Kiruna",
+        description: "圍坐在溫暖的篝火旁，一邊品嚐現煮的拉普蘭越橘熱茶，一邊傾聽長者講述萬物有靈的傳說。",
+        budget_hkd: 1100,
+        unsplash_query: "Arctic campfire snow night winter",
+        image_url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 46,
+        title_zh: "基律納新舊城市遷徙文化導覽",
+        title_en: "Kiruna City Transformation Tour",
+        location: "Lapland, Kiruna",
+        description: "深入瞭解這座因鐵礦場而整體搬遷的北極城市，參觀移動中的百年木造教堂與新前衛市政廳。",
+        budget_hkd: 600,
+        unsplash_query: "Kiruna sweden church winter snow",
+        image_url: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 47,
+        title_zh: "Visby 哥特蘭島中世紀古城冬景",
+        title_en: "Visby Medieval Town Winter Walk",
+        location: "Gotland",
+        description: "走進被古城牆包圍的世界遺產 Visby，在落雪的中世紀石板路、教堂廢墟與小紅屋之間漫步。",
+        budget_hkd: 2200,
+        unsplash_query: "Visby Gotland sweden winter old town",
+        image_url: "https://images.unsplash.com/photo-1543783207-ec64e4d95325?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 48,
+        title_zh: "卡爾馬城堡冬日奇幻探險",
+        title_en: "Kalmar Castle Winter Tour",
+        location: "Småland, Kalmar",
+        description: "參觀建於 12 世紀、佇立於海邊的雄偉城堡，探索暗道、皇家大廳與冬日限定歷史展覽。",
+        budget_hkd: 700,
+        unsplash_query: "Kalmar castle sweden winter",
+        image_url: "https://images.unsplash.com/photo-1513581166391-887a96ddeafd?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 49,
+        title_zh: "北極圈露天野餐與熱越橘汁",
+        title_en: "Arctic Snow Picnic & Warm Lingonberry",
+        location: "Lapland, Abisko",
+        description: "坐在鹿皮毯上，在冰天雪地中享用溫暖的越橘汁與現烤北歐薄餅，感受簡樸純粹的極地野趣。",
+        budget_hkd: 500,
+        unsplash_query: "Winter picnic snow warm drink sweden",
+        image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: 50,
+        title_zh: "斯德哥爾摩 ABBA 博物館音樂之旅",
+        title_en: "ABBA The Museum Tour",
+        location: "Stockholm",
+        description: "進入互動式音樂博物館，登上虛擬舞台與 ABBA 一同合唱，試穿經典舞台服飾，感受流行音樂魅力。",
+        budget_hkd: 420,
+        unsplash_query: "Stockholm museum music abba",
+        image_url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80"
+      }
+    ];
+
+    // ==========================================
+    // 2. 遊戲狀態與 Elo 排序演算法 Core Mechanics
+    // ==========================================
+    const MAX_COMPARISONS = 85; // 總選擇次數設定在 85 次，防疲勞並精準排序
+    let gameState = {
+      items: [],
+      currentStep: 0,
+      currentPair: [null, null],
+      history: []
+    };
+
+    // 初始化遊戲
+    function startGame() {
+      gameState.items = swedenSpots.map(spot => ({
+        ...spot,
+        elo: 1200,          // 初始 Elo 評分
+        matches: 0,         // 已比對次數
+        opponents: new Set()// 已對決過的對手 ID
+      }));
+      gameState.currentStep = 0;
+      gameState.history = [];
+
+      document.getElementById('welcome-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.remove('flex');
+      document.getElementById('game-screen').classList.remove('hidden');
+      document.getElementById('game-screen').classList.add('flex');
+      document.getElementById('undo-btn').classList.remove('hidden');
+
+      renderNextPair();
+    }
+
+    // 智能對決配對演算法 (Smart Matchmaking based on Elo & Match Counts)
+    function getNextPair() {
+      let bestPair = null;
+      let minScore = Infinity;
+      const items = gameState.items;
+
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          const a = items[i];
+          const b = items[j];
+
+          // 避免重複配對
+          if (a.opponents.has(b.id)) continue;
+
+          // 評分指標：1. Elo 分數相近度 2. 兩者總對決次數較少者優先
+          const eloDiff = Math.abs(a.elo - b.elo);
+          const totalMatches = a.matches + b.matches;
+          const pairScore = eloDiff + totalMatches * 20 + Math.random() * 10;
+
+          if (pairScore < minScore) {
+            minScore = pairScore;
+            bestPair = [a, b];
+          }
+        }
+      }
+
+      // 若極少數情況下全配對過，隨機補一對
+      if (!bestPair) {
+        let idx1 = Math.floor(Math.random() * items.length);
+        let idx2 = (idx1 + 1) % items.length;
+        bestPair = [items[idx1], items[idx2]];
+      }
+
+      // 隨機打亂左右位置
+      return Math.random() < 0.5 ? bestPair : [bestPair[1], bestPair[0]];
+    }
+
+    // 渲染當前比對卡片
+    function renderNextPair() {
+      if (gameState.currentStep >= MAX_COMPARISONS) {
+        showResults();
+        return;
+      }
+
+      const pair = getNextPair();
+      gameState.currentPair = pair;
+
+      // 更新進度條
+      const progressPercent = Math.min(100, Math.round((gameState.currentStep / MAX_COMPARISONS) * 100));
+      document.getElementById('progress-text').innerText = `進度：第 ${gameState.currentStep + 1} / 約 ${MAX_COMPARISONS} 次`;
+      document.getElementById('progress-percent').innerText = `${progressPercent}%`;
+      document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+      // 渲染 Card A
+      document.getElementById('img-a').src = pair[0].image_url;
+      document.getElementById('loc-a').innerText = `📍 ${pair[0].location}`;
+      document.getElementById('budget-a').innerText = `💰 約 HK$ ${pair[0].budget_hkd.toLocaleString()}`;
+      document.getElementById('title-zh-a').innerText = pair[0].title_zh;
+      document.getElementById('title-en-a').innerText = pair[0].title_en;
+      document.getElementById('desc-a').innerText = pair[0].description;
+
+      // 渲染 Card B
+      document.getElementById('img-b').src = pair[1].image_url;
+      document.getElementById('loc-b').innerText = `📍 ${pair[1].location}`;
+      document.getElementById('budget-b').innerText = `💰 約 HK$ ${pair[1].budget_hkd.toLocaleString()}`;
+      document.getElementById('title-zh-b').innerText = pair[1].title_zh;
+      document.getElementById('title-en-b').innerText = pair[1].title_en;
+      document.getElementById('desc-b').innerText = pair[1].description;
+    }
+
+    // 使用者選擇結果處理 (Elo Update)
+    function makeChoice(selectedIndex) {
+      const winner = gameState.currentPair[selectedIndex];
+      const loser = gameState.currentPair[1 - selectedIndex];
+
+      // 紀錄歷史以利 Undo
+      gameState.history.push({
+        winnerId: winner.id,
+        loserId: loser.id,
+        prevEloWinner: winner.elo,
+        prevEloLoser: loser.elo
+      });
+
+      // Elo 積分計算公式
+      const K = 48; // K-factor 影響變動幅度
+      const expectedWinner = 1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
+      const expectedLoser = 1 / (1 + Math.pow(10, (winner.elo - loser.elo) / 400));
+
+      winner.elo += K * (1 - expectedWinner);
+      loser.elo += K * (0 - expectedLoser);
+
+      winner.matches++;
+      loser.matches++;
+      winner.opponents.add(loser.id);
+      loser.opponents.add(winner.id);
+
+      gameState.currentStep++;
+      renderNextPair();
+    }
+
+    // 復原上一步 (Undo)
+    function undoLastChoice() {
+      if (gameState.history.length === 0) {
+        showToast("已退回初始狀態！");
+        return;
+      }
+
+      const last = gameState.history.pop();
+      const winner = gameState.items.find(i => i.id === last.winnerId);
+      const loser = gameState.items.find(i => i.id === last.loserId);
+
+      if (winner && loser) {
+        winner.elo = last.prevEloWinner;
+        loser.elo = last.prevEloLoser;
+        winner.matches--;
+        loser.matches--;
+        winner.opponents.delete(loser.id);
+        loser.opponents.delete(winner.id);
+      }
+
+      gameState.currentStep = Math.max(0, gameState.currentStep - 1);
+      renderNextPair();
+      showToast("已復原上一次選擇 ↩️");
+    }
+
+    // ==========================================
+    // 3. 圖片載入失敗與容錯機制 (Fallback Handling)
+    // ==========================================
+    function handleImgError(imgElement, index) {
+      const spot = gameState.currentPair[index];
+      if (!spot) return;
+      
+      imgElement.onerror = null; // 避免無限迴圈
+      // 使用穩定備用圖源
+      imgElement.src = `https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80`;
+    }
+
+    // ==========================================
+    // 4. 結算頁面與統計 (Results Page)
+    // ==========================================
+    function showResults() {
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('flex');
+      document.getElementById('undo-btn').classList.add('hidden');
+      
+      const resultScreen = document.getElementById('result-screen');
+      resultScreen.classList.remove('hidden');
+      resultScreen.classList.add('flex');
+
+      // 依 Elo 積分降序排序
+      const rankedItems = [...gameState.items].sort((a, b) => b.elo - a.elo);
+
+      // 計算 Top 5 總預算
+      const top5Budget = rankedItems.slice(0, 5).reduce((sum, item) => sum + item.budget_hkd, 0);
+      document.getElementById('top5-budget').innerText = `HK$ ${top5Budget.toLocaleString()}`;
+
+      // 渲染 Top 10 卡片
+      const top10Container = document.getElementById('top10-container');
+      top10Container.innerHTML = '';
+
+      rankedItems.slice(0, 10).forEach((item, index) => {
+        const rank = index + 1;
+        let rankBadgeClass = 'bg-slate-700 text-slate-300';
+        let rankIcon = `#${rank}`;
+
+        if (rank === 1) { rankBadgeClass = 'bg-amber-400 text-slate-950 font-extrabold'; rankIcon = '🥇 1st'; }
+        else if (rank === 2) { rankBadgeClass = 'bg-slate-300 text-slate-950 font-extrabold'; rankIcon = '🥈 2nd'; }
+        else if (rank === 3) { rankBadgeClass = 'bg-amber-700 text-white font-extrabold'; rankIcon = '🥉 3rd'; }
+
+        const card = document.createElement('div');
+        card.className = 'glass-card rounded-2xl overflow-hidden flex flex-col justify-between';
+        card.innerHTML = `
+          <div>
+            <div class="relative h-44 overflow-hidden bg-slate-800">
+              <img src="${item.image_url}" alt="${item.title_zh}" class="w-full h-full object-cover">
+              <div class="absolute top-2.5 left-2.5 ${rankBadgeClass} text-xs px-2.5 py-1 rounded-full shadow-md">
+                ${rankIcon}
+              </div>
+              <div class="absolute top-2.5 right-2.5 bg-slate-900/80 backdrop-blur-md text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/30">
+                HK$ ${item.budget_hkd.toLocaleString()}
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="text-xs text-sky-400 font-medium mb-1">📍 ${item.location}</div>
+              <h4 class="font-bold text-white text-base mb-1">${item.title_zh}</h4>
+              <p class="text-[11px] text-slate-400 font-mono mb-2">${item.title_en}</p>
+              <p class="text-xs text-slate-300 line-clamp-2">${item.description}</p>
+            </div>
+          </div>
+        `;
+        top10Container.appendChild(card);
+      });
+
+      // 渲染 1-50 完整排行榜表格
+      const tbody = document.getElementById('full-rank-tbody');
+      tbody.innerHTML = '';
+
+      rankedItems.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/50 transition';
+        tr.innerHTML = `
+          <td class="py-3 px-3 font-bold ${index < 3 ? 'text-nordic-gold' : 'text-slate-400'}">#${index + 1}</td>
+          <td class="py-3 px-3">
+            <div class="font-semibold text-white">${item.title_zh}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${item.title_en}</div>
+          </td>
+          <td class="py-3 px-3 text-slate-300">${item.location}</td>
+          <td class="py-3 px-3 text-right font-mono text-amber-300">HK$ ${item.budget_hkd.toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 分享/複製結果至剪貼簿
+    function shareResults() {
+      const rankedItems = [...gameState.items].sort((a, b) => b.elo - a.elo);
+      const top5 = rankedItems.slice(0, 5);
+      const top5Budget = top5.reduce((sum, item) => sum + item.budget_hkd, 0);
+
+      let text = `🇸🇪【我的瑞典冬季旅遊偏好 Top 5】\n\n`;
+      top5.forEach((item, index) => {
+        text += `${index + 1}. ${item.title_zh} (📍 ${item.location})\n`;
+      });
+      text += `\n💰 前 5 大體驗預估總預算：HK$ ${top5Budget.toLocaleString()}\n`;
+      text += `✨ 快來測試你的瑞典冬日旅遊偏好！`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("已成功複製偏好 Top 5 行程至剪貼簿！");
+      }).catch(() => {
+        showToast("複製失敗，請手動截圖分享。");
+      });
+    }
+
+    // 重新遊戲
+    function restartGame() {
+      startGame();
+    }
+
+    // Toast 提示框
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
